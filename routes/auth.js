@@ -1,13 +1,17 @@
+require('dotenv').config();
 const express = require("express");
 const router = express.Router();
 const {check, validationResult} = require("express-validator");
 const users = require("../db");
+const bcrypt = require('bcrypt');
+const JWT = require("jsonwebtoken");
+const JWT_SECRET = process.env.JWT_SECRET;
 
 router.post("/signup", [
     check("email", "Please provide a valid email").isEmail(),
      check("password", "Please provide a password that is greater than 5 characters").isLength({
     min: 6
-})], (req, res) => {
+})], async (req, res) => {
     const reqPassword = req.body.password;
     const reqEmail = req.body.email;
 
@@ -22,11 +26,29 @@ router.post("/signup", [
     if(user) return res.status(400).send({
         "errors": [
             {
-                "msg": "This user already exists!"
+                "msg": "This user already exists!!"
             }
         ]
     })
-    res.send("Auth Route Working");
+
+    const hashedPassword = await bcrypt.hash(reqPassword, 10);
+    users.push({
+        email: reqEmail, 
+        password: hashedPassword
+    })
+
+    const token = await JWT.sign({
+        reqEmail
+    }, JWT_SECRET, {
+        expiresIn: 360000
+    })
+    res.send({
+        token
+    })
+})
+
+router.get("/all", (req, res) => {
+    res.status(200).send(users);
 })
 
 module.exports = router;
