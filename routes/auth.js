@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require("express");
 const router = express.Router();
 const {check, validationResult} = require("express-validator");
-const users = require("../db");
+const {users} = require("../db");
 const bcrypt = require('bcrypt');
 const JWT = require("jsonwebtoken");
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -46,6 +46,41 @@ router.post("/signup", [
         token
     })
 })
+
+router.post('/login', async (req, res) => {
+    const reqEmail = req.body.email;
+    const reqPassword = req.body.password;
+
+    let user = users.find(({email}) => email === reqEmail);
+    if(!user) return res.status(400).send({
+        "errors": [
+            {
+                "msg": "Invalid Credentials!"
+            }
+        ]
+    });
+
+    let isMatch = await bcrypt.compare(reqPassword, user.password);
+
+    if(!isMatch) return res.status(400).send({
+        "errors": [
+            {
+                "msg": "Invalid Credentials!"
+            }
+        ]
+    });
+
+    const token = await JWT.sign({
+        reqEmail
+    }, JWT_SECRET, {
+        expiresIn: 360000
+    })
+    res.send({
+        token
+    })
+
+})
+
 
 router.get("/all", (req, res) => {
     res.status(200).send(users);
