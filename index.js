@@ -16,8 +16,10 @@ app.get("/", (req, res) => {
 
 
 const authRouter = require("./routes/auth");
+const postsRouter = require("./routes/post");
 
 app.use("/auth", authRouter);
+app.use("/post", postsRouter);
 
 app.listen(PORT, () => {
     console.log(`Now running on PORT: ${PORT}`);
